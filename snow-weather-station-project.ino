@@ -3,11 +3,11 @@
 #include "DHT.h"
 #include "RTClib.h"
 
-#define STATUS_PIN 3
-#define ERROR_PIN 4
+#define INTERNAL_SD_ALERT_PIN 3
+#define EXTERNAL_SD_ALERT_PIN 4
+#define INTERNAL_SD_CD_PIN 10
 #define DHTTYPE DHT22
 #define DHT_PIN 2
-#define SD_CD_PIN 10
 #define HC_TRIGGER_PIN 6 
 #define HC_ECHO_PIN 5
 
@@ -16,9 +16,9 @@ float base_distance = 100.0;
 DHT dht_sensor(DHT_PIN, DHT22); // instanciated before SnowStation so we use pointer as construct parameter
 RTC_DS1307 rtc_clock;
 SnowStation snow_station(\
-	STATUS_PIN,\
-	ERROR_PIN,\
-	SD_CD_PIN,\
+	INTERNAL_SD_ALERT_PIN,\
+	EXTERNAL_SD_ALERT_PIN,\
+	INTERNAL_SD_CD_PIN,\
 	&dht_sensor,\
 	&rtc_clock,\
 	HC_TRIGGER_PIN,\
@@ -30,18 +30,14 @@ SnowStation snow_station(\
 
 void setup(){
 	Serial.begin(9600);
-	// while (!Serial){;} // wait for serial port to connect. Needed for native USB port only
-	Serial.println("init");
 	snow_station.begin();
+	pinMode(7, INPUT);
 }
 
 //############################################################
 
 void loop(){
-	snow_station.init_loop();
-	snow_station.update_all_sensors();
-	snow_station.save_record();
-	snow_station.print_buffer();
-	snow_station.end_loop();
-	delay(5000);
+	bool button_state = digitalRead(7);
+	snow_station.loop(button_state);
+	snow_station.print_info();
 }
