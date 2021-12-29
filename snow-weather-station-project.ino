@@ -1,6 +1,7 @@
 #include "src/snow-station/SnowStation.h" 
 #include "DHT.h"
 #include "RTClib.h"
+#include <LCD5110_Graph.h>
 
 #define BAUD_RATE 500000
 #define SD_PIN 53
@@ -8,12 +9,14 @@
 #define SD_WRITE_LEDPIN 4
 #define SD_TRANSFER_DATA_BUTTONPIN 40
 #define DHTTYPE DHT22
-#define DHT_PIN 2
-#define HC_TRIGGER_PIN 6
-#define HC_ECHO_PIN 5
+#define DHT_PIN 45
+#define HC_TRIGGER_PIN 22
+#define HC_ECHO_PIN 23
 
 DHT dht_sensor(DHT_PIN, DHT22); // instanciated before SnowStation so we use pointer as construct parameter
 RTC_DS1307 rtc_clock;
+LCD5110 screen(8, 9, 10, 12, 11);
+
 SnowStation snow_station(\
 	SD_PIN,\
 	SD_TRANSFER_DATA_LEDPIN,\
@@ -22,7 +25,8 @@ SnowStation snow_station(\
 	&dht_sensor,\
 	&rtc_clock,\
 	HC_TRIGGER_PIN,\
-	HC_ECHO_PIN\
+	HC_ECHO_PIN,\
+	&screen
 	);
 
 //############################################################

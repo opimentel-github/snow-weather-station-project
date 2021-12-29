@@ -15,7 +15,7 @@ float microseconds_to_centimeters(long microseconds, float c) {
 
 //############################################################
 
-SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin){
+SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, LCD5110* _screen){
 	sd_pin = _sd_pin;
 	sd_transfer_data_ledpin = Ledpin(_sd_transfer_data_ledpin);
 	sd_write_ledpin = Ledpin(_sd_write_ledpin);
@@ -24,6 +24,7 @@ SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_writ
 	rtc_clock = _rtc_clock;
 	hc_trigger_pin = _hc_trigger_pin;
 	hc_echo_pin = _hc_echo_pin;
+	screen = _screen;
 }
 
 SnowStation::SnowStation(void){}
@@ -46,8 +47,14 @@ void SnowStation::begin(){
 	begin_hc();
 	begin_clock();
 	begin_sd();
+	begin_screen();
 
-	change_state(STATE_SENSING_OK);
+	change_state(STATE_SENSING_OK, MAX_UNSIGNED_LONG-1);
+	
+}
+
+void SnowStation::begin_screen(){
+	screen->InitLCD(CONTRAST);
 }
 
 void SnowStation::begin_ledpins(){
@@ -177,10 +184,11 @@ void SnowStation::fill_buffer(){
 		String(state).c_str(),\
 		String(julian_date).c_str(),\
 		String(julian_day, 10).c_str(),\
-		String(internal_humidity).c_str(),\
 		String(internal_temperature).c_str(),\
+		String(internal_humidity).c_str(),\
 		String(snow_distance).c_str()\
 		);
+	update_screen();
 }
 
 bool SnowStation::save_record(){
@@ -290,29 +298,52 @@ void SnowStation::print_info(){
 
 //############################################################
 
-void SnowStation::change_state(int new_state){
+void SnowStation::change_state(int new_state, unsigned long new_loop_counter_value=0){
 	state = new_state;
 	report_state();
-	reset_loop_counter();
+	reset_loop_counter(new_loop_counter_value);
 }
 
 void SnowStation::report_state(){
 	print_info();
 }
 
-void SnowStation::reset_loop_counter(){
-	loop_counter = 0;
+void SnowStation::reset_loop_counter(unsigned long new_loop_counter_value=0){
+	loop_counter = new_loop_counter_value;
+}
+
+void SnowStation::add_loop_counter(){
+	loop_counter += 1;
+	delay(10);
+}
+
+unsigned long SnowStation::get_loop_counter(){
+	return loop_counter;
 }
 
 //############################################################
 
+void SnowStation::update_screen_line(int x, int y, String key, String value){
+	sprintf(screen_buffer_text, "%s=%s", key.c_str(), value.c_str());
+	screen->print(screen_buffer_text, x, y);
+}
+
+void SnowStation::update_screen(){
+	screen->clrScr();
+	screen->setFont(SmallFont);
+	update_screen_line(0, SCREEN_DY*0, "counter", String(loop_counter));
+	update_screen_line(0, SCREEN_DY*1, "temp", String(internal_temperature));
+	update_screen_line(0, SCREEN_DY*2, "dist", String(snow_distance));
+	screen->update();
+}
+
 void SnowStation::loop(){
-	loop_counter += 1;
+	add_loop_counter();
 	if(state==STATE_SENSING_OK){ // STATE
 		if(sd_transfer_data_buttonpin.get_state()){
 			change_state(STATE_READING_OK);
 		}else{
-			if(loop_counter>100){
+			if(loop_counter>1000){
 				update_dht();
 				update_hc();
 				if(save_record()){
