@@ -104,7 +104,7 @@ class SnowStation
 		int state;
 		unsigned long loop_counter;
 		File file;
-		long save_record_counter;
+		unsigned long save_record_counter;
 		char record_filedir[15];
 		char buffer_text[200];
 		char screen_buffer_text[100];
@@ -114,7 +114,7 @@ class SnowStation
 		float external_temperature;
 		float snow_distance;
 		DateTime date;
-		long julian_date;
+		unsigned long julian_date;
 		float julian_day;
 };
 

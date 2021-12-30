@@ -6,7 +6,7 @@
 // CE – Pin 6
 // RST – Pin 7
 
-LCD5110 myGLCD(8,9,10,12,11);
+LCD5110 myGLCD(8,9,10,12,11); // 84x48 pixels
 extern unsigned char MediumNumbers[];
 extern unsigned char BigNumbers[];
 extern unsigned char SmallFont[];

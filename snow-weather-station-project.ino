@@ -15,7 +15,7 @@
 
 DHT dht_sensor(DHT_PIN, DHT22); // instanciated before SnowStation so we use pointer as construct parameter
 RTC_DS1307 rtc_clock;
-LCD5110 screen(8, 9, 10, 12, 11);
+LCD5110 screen(8, 9, 10, 12, 11); // 84x48 pixels
 
 SnowStation snow_station(\
 	SD_PIN,\

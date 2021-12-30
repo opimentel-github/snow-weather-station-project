@@ -176,6 +176,22 @@ void SnowStation::update_date(){
 	delay(SHORT_DELAY);
 }
 
+void SnowStation::update_screen_line(int x, int y, String key, String value){
+	sprintf(screen_buffer_text, "%s=%s", key.c_str(), value.c_str());
+	screen->print(screen_buffer_text, x, y);
+}
+
+void SnowStation::update_screen(){
+	screen->clrScr();
+	screen->setFont(TinyFont);
+	// screen->print("last saved", 0, SCREEN_DY*0);
+	screen->print(String(date.year())+"/"+String(date.month())+"/"+String(date.day())+" "+String(date.hour())+":"+String(date.minute())+":"+String(date.second()), 0, SCREEN_DY*0);
+	screen->drawLine(0, 6, 84, 6);
+	update_screen_line(0, SCREEN_DY*3, "temp", String(internal_temperature));
+	update_screen_line(0, SCREEN_DY*4, "dist", String(snow_distance));
+	screen->update();
+}
+
 //############################################################
 
 void SnowStation::fill_buffer(){
@@ -322,20 +338,6 @@ unsigned long SnowStation::get_loop_counter(){
 }
 
 //############################################################
-
-void SnowStation::update_screen_line(int x, int y, String key, String value){
-	sprintf(screen_buffer_text, "%s=%s", key.c_str(), value.c_str());
-	screen->print(screen_buffer_text, x, y);
-}
-
-void SnowStation::update_screen(){
-	screen->clrScr();
-	screen->setFont(SmallFont);
-	update_screen_line(0, SCREEN_DY*0, "counter", String(loop_counter));
-	update_screen_line(0, SCREEN_DY*1, "temp", String(internal_temperature));
-	update_screen_line(0, SCREEN_DY*2, "dist", String(snow_distance));
-	screen->update();
-}
 
 void SnowStation::loop(){
 	add_loop_counter();
