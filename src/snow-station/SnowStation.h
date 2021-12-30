@@ -106,7 +106,7 @@ class SnowStation
 		File file;
 		unsigned long save_record_counter;
 		char record_filedir[15];
-		char buffer_text[200];
+		char sd_buffer_text[200];
 		char screen_buffer_text[100];
 		float internal_humidity;
 		float internal_temperature;

@@ -93,17 +93,27 @@ void SnowStation::begin_sd(){
 	DEBUG('\n');
 
 	// file
+	sprintf(record_filedir, "%s/%04d%02d%02d.txt",\
+		SD_ROOTDIR,\
+		date.year(),\
+		date.month(),\
+		date.day()\
+		);
+	Serial.print("record_filedir="); Serial.println(record_filedir);
 	if (!SD.exists(record_filedir)){
 		SD.mkdir(SD_ROOTDIR);
-		sprintf(record_filedir, "%s/%04d%02d%02d.txt",\
-			SD_ROOTDIR,\
-			date.year(),\
-			date.month(),\
-			date.day()\
+		file = SD.open(record_filedir, FILE_WRITE);
+		sprintf(sd_buffer_text, "%s, %s, %s, %s, %s, %s, %s",\
+			"save_record_counter",\
+			"state",\
+			"julian_date",\
+			"julian_day",\
+			"internal_temperature",\
+			"internal_humidity",\
+			"snow_distance"\
 			);
-		Serial.print("record_filedir="); Serial.println(record_filedir);
-		File file = SD.open(record_filedir, FILE_WRITE);
-		file.close();
+		file.println(sd_buffer_text); // write buffer
+		file.close(); // close the file
 	}
 }
 
@@ -195,7 +205,7 @@ void SnowStation::update_screen(){
 //############################################################
 
 void SnowStation::fill_buffer(){
-	sprintf(buffer_text, "%s, %s, %s, %s, %s, %s, %s",\
+	sprintf(sd_buffer_text, "%s, %s, %s, %s, %s, %s, %s",\
 		String(save_record_counter).c_str(),\
 		String(state).c_str(),\
 		String(julian_date).c_str(),\
@@ -215,7 +225,7 @@ bool SnowStation::save_record(){
 	Serial.print("record_filedir=");
 	Serial.println(record_filedir);
 	if (file){
-		file.println(buffer_text); // write buffer
+		file.println(sd_buffer_text); // write buffer
 		file.close(); // close the file
 		sd_write_ledpin.pulse(2);
 		success = true;
@@ -304,7 +314,7 @@ bool SnowStation::copy_files(){
 //############################################################
 
 void SnowStation::print_sd_buffer(){
-	Serial.print("buffer_text="); Serial.println(buffer_text);
+	Serial.print("sd_buffer_text="); Serial.println(sd_buffer_text);
 }
 
 void SnowStation::print_info(){
