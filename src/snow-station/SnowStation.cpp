@@ -197,8 +197,9 @@ void SnowStation::update_screen(){
 	// screen->print("last saved", 0, SCREEN_DY*0);
 	screen->print(String(date.year())+"/"+String(date.month())+"/"+String(date.day())+" "+String(date.hour())+":"+String(date.minute())+":"+String(date.second()), 0, SCREEN_DY*0);
 	screen->drawLine(0, 6, 84, 6);
-	update_screen_line(0, SCREEN_DY*3, "temp", String(internal_temperature));
-	update_screen_line(0, SCREEN_DY*4, "dist", String(snow_distance));
+	update_screen_line(0, SCREEN_DY*1, "dst", String(snow_distance));
+	update_screen_line(0, SCREEN_DY*2, "tmp (i)", String(internal_temperature));
+	update_screen_line(0, SCREEN_DY*3, "hum (i)", String(internal_humidity));
 	screen->update();
 }
 
@@ -239,9 +240,21 @@ bool SnowStation::save_record(){
 
 bool SnowStation::copy_files(){
 	bool success = false;
+
+	Serial3.println("--1");
+	while (true){
+		if (Serial3.available()){
+		serial_str = Serial3.readStringUntil('\n');
+		Serial.println(serial_str);
+		break;
+		// if (serial_str=="1"){
+		// 	break;
+		// }
+		}
+	}
+
 	File dir;
 	File file;
-	String serial_str;
 	dir = SD.open("/r/");
 	while(true){
 		file = dir.openNextFile();
@@ -251,7 +264,7 @@ bool SnowStation::copy_files(){
 		}
 		String filename = file.name();
 
-		DEBUG("removing file...");
+		DEBUGLN("removing file...");
 		Serial3.print("--o ");
 		Serial3.println(filename);
 		while (true){
@@ -297,7 +310,7 @@ bool SnowStation::copy_files(){
 			}
 		}
 	}
-	Serial3.println("--x");
+	Serial3.println("--0");
 	while (true){
 		if (Serial3.available()){
 		serial_str = Serial3.readStringUntil('\n');
