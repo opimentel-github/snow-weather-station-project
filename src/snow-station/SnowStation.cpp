@@ -265,8 +265,7 @@ bool SnowStation::copy_files(){
 		String filename = file.name();
 
 		DEBUGLN("removing file...");
-		Serial3.print("--o ");
-		Serial3.println(filename);
+		Serial3.println("--o "+filename);
 		while (true){
 			if (Serial3.available()){
 			serial_str = Serial3.readStringUntil('\n');
@@ -278,12 +277,8 @@ bool SnowStation::copy_files(){
 			}
 		}
 		while (file.available()){
-					// Serial.println("sending buffer...");
-					Serial3.print("--w ");
-					Serial3.print(filename);
-					Serial3.print(":");
 					String read_buffer = file.readStringUntil('\n');
-					Serial3.println(read_buffer);
+					Serial3.println("--w "+read_buffer);
 					while (true){
 						if (Serial3.available()){
 						serial_str = Serial3.readStringUntil('\n');
@@ -297,8 +292,7 @@ bool SnowStation::copy_files(){
 				}
 		file.close();
 		dir.close();
-		Serial3.print("--c ");
-		Serial3.println(filename);
+		Serial3.println("--c "+filename);
 		while (true){
 			if (Serial3.available()){
 			serial_str = Serial3.readStringUntil('\n');

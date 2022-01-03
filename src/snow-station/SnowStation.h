@@ -107,7 +107,7 @@ class SnowStation
 		unsigned long loop_counter;
 		File file;
 		unsigned long save_record_counter;
-		char record_filedir[15];
+		char record_filedir[20];
 		char sd_buffer_text[200];
 		char screen_buffer_text[100];
 		float internal_humidity;
