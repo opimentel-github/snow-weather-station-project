@@ -35,6 +35,8 @@
 #define NOF_DECIMALS 10
 #define HC_AVG 5
 #define SD_ROOTDIR "r"
+#define MAX_LOOP_COUNTER 10
+#define LOOP_DELAY 1000
 
 #define STATE_IDLE -1
 #define STATE_SENSING_OK 0

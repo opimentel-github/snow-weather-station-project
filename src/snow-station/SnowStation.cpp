@@ -50,14 +50,14 @@ void SnowStation::begin(){
 bool SnowStation::begin_clock(bool uses_compilation_date=false){
 	delay(SHORT_DELAY);
 	DEBUG("begining clock");
-	rtc_clock->begin();
+	bool initialized = rtc_clock->begin();
 	DEBUGLN();
-	if (uses_compilation_date){
+	if (initialized && uses_compilation_date){
 		rtc_clock->adjust(DateTime(F(__DATE__), F(__TIME__)));
 		DEBUG("compilation_date="); DEBUGLN(__DATE__);
 		DEBUG("compilation_hour="); DEBUGLN(__TIME__);
 	}
-	return true;
+	return initialized;
 }
 
 bool SnowStation::begin_internal_temperature_sensor(){
@@ -69,11 +69,10 @@ bool SnowStation::begin_internal_temperature_sensor(){
 }
 
 bool SnowStation::begin_external_temperature_sensor(){
-	sht_sensor->initSHT20();
-	// delay(100);
-	// sht_sensor->checkSHT20();
-	// DEBUGLN(sht_sensor->checkSHT20());
 	delay(SHORT_DELAY);
+	DEBUG("begining SHT sensor");
+	sht_sensor->initSHT20();
+	DEBUGLN();
 	return true;
 }
 
@@ -264,6 +263,9 @@ SnowInfo SnowStation::get_snow_data(){
 	// duration is the time (in microseconds) from the sending
 	// of the ping to the reception of its echo off of an object.
 	long duration = pulseIn(hc_echo_pin, HIGH);
+	if (duration<=0){
+		return snow_info;
+	}
 	float c; // speed of sound
 	float temperature = internal_temp_info.temperature;
 	if(USES_FIXED_C==1){
@@ -271,6 +273,7 @@ SnowInfo SnowStation::get_snow_data(){
 	}else{
 		c = 10000.0/29.0; // Original value for c in code
 	}
+
 	snow_info.distance = microseconds_to_centimeters(duration, c);
 	return snow_info;
 	// float avg_hc_distance = 0;
@@ -456,7 +459,8 @@ void SnowStation::loop(){
 		if(sd_transfer_data_buttonpin.get_state()){
 			change_state(STATE_COPYING_OK);
 		}else{
-			if(loop_counter>1000){
+			delay(LOOP_DELAY);
+			if(loop_counter>MAX_LOOP_COUNTER){
 				bool record_saved = save_record();
 				if(record_saved){
 					change_state(STATE_SENSING_OK);
