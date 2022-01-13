@@ -7,8 +7,9 @@
 #include <Ledpin.h>
 #include <Buttonpin.h>
 #include <SD.h>
-#include "DHT.h"
-#include "RTClib.h"
+#include <DHT.h>
+#include <DFRobot_SHT20.h>
+#include <RTClib.h>
 #include <LCD5110_Graph.h>
 
 #define __DEBUG__
@@ -27,6 +28,7 @@
 #define SCREEN_DY 9
 #define SHORT_DELAY 10
 #define LONG_DELAY 500
+#define USES_COMPILATION_DATE false
 
 #define MAX_UNSIGNED_LONG 4294967295
 
@@ -49,14 +51,14 @@ extern unsigned char TinyFont[];
 //############################################################
 
 struct DateInfo{
-	unsigned int year;
-	unsigned int month;
-	unsigned int day;
-	unsigned int hour;
-	unsigned int minute;
-	unsigned int second;
-	unsigned long julian_date;
-	float julian_day;
+	unsigned int year = NAN;
+	unsigned int month = NAN;
+	unsigned int day = NAN;
+	unsigned int hour = NAN;
+	unsigned int minute = NAN;
+	unsigned int second = NAN;
+	unsigned long julian_date = NAN;
+	float julian_day = NAN;
 };
 
 struct TempInfo{
@@ -81,7 +83,7 @@ struct SnowInfo{
 
 class SnowStation{
 	public:
-		SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, LCD5110* _screen);
+		SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, DFRobot_SHT20* _sht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, LCD5110* _screen);
 		SnowStation(void); // empty constructor
 		void begin();
 
@@ -107,7 +109,6 @@ class SnowStation{
 		void update_all_sensor_data();
 		
 		// updates
-		void update_screen_line(int x, int y, String key, String value);
 		void update_screen();
 		void update_buffer();
 
@@ -134,6 +135,7 @@ class SnowStation{
 		Ledpin sd_write_ledpin;
 		Buttonpin sd_transfer_data_buttonpin;
 		DHT* dht_sensor;
+		DFRobot_SHT20* sht_sensor;
 		RTC_DS1307* rtc_clock;
 		int hc_trigger_pin;
 		int hc_echo_pin;

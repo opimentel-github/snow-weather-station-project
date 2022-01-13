@@ -15,12 +15,13 @@ float microseconds_to_centimeters(long microseconds, float c) {
 
 //############################################################
 
-SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, LCD5110* _screen){
+SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, DFRobot_SHT20* _sht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, LCD5110* _screen){
 	sd_pin = _sd_pin;
 	sd_transfer_data_ledpin = Ledpin(_sd_transfer_data_ledpin);
 	sd_write_ledpin = Ledpin(_sd_write_ledpin);
 	sd_transfer_data_buttonpin = Buttonpin(_sd_transfer_data_buttonpin);
 	dht_sensor = _dht_sensor;
+	sht_sensor = _sht_sensor;
 	rtc_clock = _rtc_clock;
 	hc_trigger_pin = _hc_trigger_pin;
 	hc_echo_pin = _hc_echo_pin;
@@ -46,12 +47,12 @@ void SnowStation::begin(){
 
 //############################################################
 
-bool SnowStation::begin_clock(bool set_compilation_date=false){
+bool SnowStation::begin_clock(bool uses_compilation_date=false){
 	delay(SHORT_DELAY);
 	DEBUG("begining clock");
 	rtc_clock->begin();
 	DEBUGLN();
-	if (set_compilation_date){
+	if (uses_compilation_date){
 		rtc_clock->adjust(DateTime(F(__DATE__), F(__TIME__)));
 		DEBUG("compilation_date="); DEBUGLN(__DATE__);
 		DEBUG("compilation_hour="); DEBUGLN(__TIME__);
@@ -68,18 +69,22 @@ bool SnowStation::begin_internal_temperature_sensor(){
 }
 
 bool SnowStation::begin_external_temperature_sensor(){
+	sht_sensor->initSHT20();
+	// delay(100);
+	// sht_sensor->checkSHT20();
+	// DEBUGLN(sht_sensor->checkSHT20());
 	delay(SHORT_DELAY);
-	return false;
+	return true;
 }
 
 bool SnowStation::begin_wind_sensor(){
 	delay(SHORT_DELAY);
-	return false;
+	return false; // fixme
 }
 
 bool SnowStation::begin_rain_sensor(){
 	delay(SHORT_DELAY);
-	return false;
+	return false; // fixme
 }
 
 bool SnowStation::begin_snow_distance_sensor(){
@@ -159,7 +164,7 @@ bool SnowStation::begin_screen(){
 DateInfo SnowStation::get_date_data(){
 	delay(SHORT_DELAY);
 	DateInfo date_info;
-	if (!begin_clock()){
+	if (!begin_clock(USES_COMPILATION_DATE)){
 		return date_info;
 	}
 
@@ -215,6 +220,8 @@ TempInfo SnowStation::get_external_temperature_data(){
 		return temp_info;
 	}
 
+	temp_info.humidity = sht_sensor->readHumidity();
+	temp_info.temperature = sht_sensor->readTemperature();
 	return temp_info;
 }
 
@@ -286,19 +293,37 @@ void SnowStation::update_all_sensor_data(){
 
 //############################################################
 
-void SnowStation::update_screen_line(int x, int y, String key, String value){
-	sprintf(screen_buffer_text, "%s=%s", key.c_str(), value.c_str());
-	screen->print(screen_buffer_text, x, y);
-}
-
 void SnowStation::update_screen(){
 	screen->clrScr();
 	screen->setFont(TinyFont);
-	screen->print(String(date_info.year)+"/"+String(date_info.month)+"/"+String(date_info.day)+" "+String(date_info.hour)+":"+String(date_info.minute)+":"+String(date_info.second), 0, SCREEN_DY*0);
+
+	sprintf(screen_buffer_text,
+		"%04d/%02d/%02d %02d:%02d:%02d",
+		date_info.year, date_info.month, date_info.day, date_info.hour, date_info.minute, date_info.second
+		);
+	screen->print(screen_buffer_text, 0, SCREEN_DY*0);
 	screen->drawLine(0, 6, 84, 6);
-	update_screen_line(0, SCREEN_DY*1, "dst", String(snow_info.distance));
-	update_screen_line(0, SCREEN_DY*2, "tmp (i)", String(internal_temp_info.temperature));
-	update_screen_line(0, SCREEN_DY*3, "hum (i)", String(internal_temp_info.humidity));
+
+	sprintf(screen_buffer_text,
+		"IT=%s; ET=%s",
+		String(internal_temp_info.temperature).c_str(),
+		String(external_temp_info.temperature).c_str()
+		);
+	screen->print(screen_buffer_text, 0, SCREEN_DY*1);
+
+	sprintf(screen_buffer_text,
+		"IH=%s; EH=%s",
+		String(internal_temp_info.humidity).c_str(),
+		String(external_temp_info.humidity).c_str()
+		);
+	screen->print(screen_buffer_text, 0, SCREEN_DY*2);
+
+	sprintf(screen_buffer_text,
+		"SD=%s",
+		String(snow_info.distance).c_str()
+		);
+	screen->print(screen_buffer_text, 0, SCREEN_DY*3);
+
 	screen->update();
 }
 
