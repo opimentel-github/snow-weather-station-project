@@ -5,6 +5,8 @@
 #include <LCD5110_Graph.h>
 
 #define BAUD_RATE 500000
+#define WIND_VANE_RECORD_SECS 3
+
 #define SD_PIN 53
 #define SD_TRANSFER_DATA_LEDPIN 3
 #define SD_WRITE_LEDPIN 4
@@ -13,6 +15,7 @@
 #define DHT_PIN 45
 #define HC_TRIGGER_PIN 22
 #define HC_ECHO_PIN 23
+#define ANEMOMETER_PIN 2
 
 DHT dht_sensor(DHT_PIN, DHT22); // instanciated before SnowStation so we use pointer as construct parameter
 DFRobot_SHT20 sht_sensor;
@@ -29,7 +32,7 @@ SnowStation snow_station(\
 	&rtc_clock,\
 	HC_TRIGGER_PIN,\
 	HC_ECHO_PIN,\
-	&screen
+	&screen\
 	);
 
 //############################################################

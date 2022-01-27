@@ -13,6 +13,11 @@ float microseconds_to_centimeters(long microseconds, float c) {
 	return microseconds*c/20000.0;
 }
 
+float get_distance(float v1, float v2){
+	float d = abs(v1-v2);
+	return d;
+}
+
 //############################################################
 
 SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, DFRobot_SHT20* _sht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, LCD5110* _screen){
@@ -76,14 +81,9 @@ bool SnowStation::begin_external_temperature_sensor(){
 	return true;
 }
 
-bool SnowStation::begin_wind_sensor(){
+bool SnowStation::begin_windrain_sensor(){
 	delay(SHORT_DELAY);
-	return false; // fixme
-}
-
-bool SnowStation::begin_rain_sensor(){
-	delay(SHORT_DELAY);
-	return false; // fixme
+	return true;
 }
 
 bool SnowStation::begin_snow_distance_sensor(){
@@ -130,20 +130,20 @@ bool SnowStation::begin_sd(){
 	if (!SD.exists(record_filedir)){
 		SD.mkdir(SD_ROOTDIR);
 		File file = SD.open(record_filedir, FILE_WRITE);
-		sprintf(sd_buffer_text, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s",\
-			"saved_records_counter",\
-			"copied_sds_counter",\
-			"state",\
-			"julian_date",\
-			"julian_day",\
-			"internal_temperature",\
-			"internal_humidity",\
-			"external_temperature",\
-			"external_humidity",\
-			"wind_speed",\
-			"wind_direction",\
-			"rain_level",\
-			"snow_distance"\
+		sprintf(sd_buffer_text, "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",\
+			"SRC",\
+			"CSC",\
+			"S",\
+			"JDATE",\
+			"JDAY",\
+			"IT",\
+			"IH",\
+			"ET",\
+			"EH",\
+			"WS",\
+			"WD",\
+			"RL",\
+			"SD"\
 			);
 		file.println(sd_buffer_text); // write buffer
 		file.close(); // close the file
@@ -224,24 +224,37 @@ TempInfo SnowStation::get_external_temperature_data(){
 	return temp_info;
 }
 
-WindInfo SnowStation::get_wind_data(){
+WindrainInfo SnowStation::get_windrain_data(){
 	delay(SHORT_DELAY);
-	WindInfo wind_info;
-	if (!begin_wind_sensor()){
-		return wind_info;
+	WindrainInfo windrain_info;
+	if (!begin_windrain_sensor()){
+		return windrain_info;
 	}
 
-	return wind_info;
-}
+	Wire.beginTransmission(8);
+	Wire.write(0);
+	Wire.endTransmission();
+	Wire.requestFrom(8, 12);
+	float speed;
+	float direction;
+	float rain_freq;
+    ((uint8_t*)&speed)[0] = Wire.read();
+    ((uint8_t*)&speed)[1] = Wire.read();
+    ((uint8_t*)&speed)[2] = Wire.read();
+    ((uint8_t*)&speed)[3] = Wire.read();
+    ((uint8_t*)&direction)[0] = Wire.read();
+    ((uint8_t*)&direction)[1] = Wire.read();
+    ((uint8_t*)&direction)[2] = Wire.read();
+    ((uint8_t*)&direction)[3] = Wire.read();
+    ((uint8_t*)&rain_freq)[0] = Wire.read();
+    ((uint8_t*)&rain_freq)[1] = Wire.read();
+    ((uint8_t*)&rain_freq)[2] = Wire.read();
+    ((uint8_t*)&rain_freq)[3] = Wire.read();
 
-RainInfo SnowStation::get_rain_data(){
-	delay(SHORT_DELAY);
-	RainInfo rain_info;
-	if (!begin_rain_sensor()){
-		return rain_info;
-	}
-
-	return rain_info;
+	windrain_info.wind_speed = speed;
+	windrain_info.wind_direction = direction;
+	windrain_info.rain_freq = rain_freq;
+	return windrain_info;
 }
 
 SnowInfo SnowStation::get_snow_data(){
@@ -289,8 +302,7 @@ void SnowStation::update_all_sensor_data(){
 	date_info = get_date_data();
 	internal_temp_info = get_internal_temperature_data();
 	external_temp_info = get_external_temperature_data();
-	wind_info = get_wind_data();
-	rain_info = get_rain_data();
+	windrain_info = get_windrain_data();
 	snow_info = get_snow_data();
 }
 
@@ -332,7 +344,7 @@ void SnowStation::update_screen(){
 
 void SnowStation::update_buffer(){
 	update_all_sensor_data();
-	sprintf(sd_buffer_text, "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s",\
+	sprintf(sd_buffer_text, "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",\
 		String(saved_records_counter).c_str(),\
 		String(copied_sds_counter).c_str(),\
 		String(state).c_str(),\
@@ -342,9 +354,9 @@ void SnowStation::update_buffer(){
 		String(internal_temp_info.humidity).c_str(),\
 		String(external_temp_info.temperature).c_str(),\
 		String(external_temp_info.humidity).c_str(),\
-		String(wind_info.speed).c_str(),\
-		String(wind_info.direction).c_str(),\
-		String(rain_info.level).c_str(),\
+		String(windrain_info.wind_speed).c_str(),\
+		String(windrain_info.wind_direction).c_str(),\
+		String(windrain_info.rain_freq).c_str(),\
 		String(snow_info.distance).c_str()\
 		);
 	DEBUG("sd_buffer_text="); DEBUGLN(sd_buffer_text);
@@ -444,7 +456,6 @@ void SnowStation::reset_loop_counter(unsigned long new_loop_counter_value=0){
 
 void SnowStation::add_loop_counter(){
 	loop_counter += 1;
-	delay(10);
 }
 
 unsigned long SnowStation::get_loop_counter(){

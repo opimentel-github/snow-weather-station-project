@@ -2,11 +2,12 @@
 #include <SD.h>
 File myFile;
 
+#define BAUD_RATE 500000
 #define SD_PIN 10
 
 void setup() {
 // Open serial communications and wait for port to open:
-Serial.begin(9600);
+Serial.begin(BAUD_RATE);
 while (!Serial) {
 	Serial.print("Initializing SD card..."); // wait for serial port to connect. Needed for native USB port only
 }

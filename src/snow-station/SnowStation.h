@@ -3,15 +3,6 @@
 #ifndef SnowStation_h
 #define SnowStation_h
 
-#include "Arduino.h"
-#include <Ledpin.h>
-#include <Buttonpin.h>
-#include <SD.h>
-#include <DHT.h>
-#include <DFRobot_SHT20.h>
-#include <RTClib.h>
-#include <LCD5110_Graph.h>
-
 #define __DEBUG__
 #ifdef __DEBUG__
 #define DEBUG(...) Serial.print(__VA_ARGS__)
@@ -21,8 +12,17 @@
 #define DEBUGLN(...)
 #endif
 
-#define DELIMITER ':'
+#include "Arduino.h"
+#include <Ledpin.h>
+#include <Buttonpin.h>
+#include <SD.h>
+#include <DHT.h>
+#include <DFRobot_SHT20.h>
+#include <RTClib.h>
+#include <LCD5110_Graph.h>
+#include <float.h>
 
+#define DELIMITER ':'
 #define USES_FIXED_C 1
 #define CONTRAST 70
 #define SCREEN_DY 9
@@ -35,8 +35,10 @@
 #define NOF_DECIMALS 10
 #define HC_AVG 5
 #define SD_ROOTDIR "r"
-#define MAX_LOOP_COUNTER 10
 #define LOOP_DELAY 1000
+#define MAX_LOOP_COUNTER 10 // 10 10000
+
+#define ANEMOMETER_VOLTAGE 5.0
 
 #define STATE_IDLE -1
 #define STATE_SENSING_OK 0
@@ -49,6 +51,9 @@ extern unsigned char MediumNumbers[];
 extern unsigned char BigNumbers[];
 extern unsigned char SmallFont[];
 extern unsigned char TinyFont[];
+extern int WIND_VANE_RECORD_SECS;
+const float v_array[] = {3.84, 1.98, 2.25, 0.41, 0.45, 0.32, 0.9, 0.62, 1.4, 1.19, 3.08, 2.93, 4.62, 4.04, 4.2, 3.43}; // bug: changed 4.78 to 4.2
+const float dir_array[] = {0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5};
 
 //############################################################
 
@@ -68,13 +73,10 @@ struct TempInfo{
 	float humidity = NAN;
 };
 
-struct WindInfo{
-	float speed = NAN;
-	float direction = NAN;
-};
-
-struct RainInfo{
-	float level = NAN;
+struct WindrainInfo{
+	float wind_speed = NAN;
+	float wind_direction = NAN;
+	float rain_freq = NAN;
 };
 
 struct SnowInfo{
@@ -93,8 +95,7 @@ class SnowStation{
 		bool begin_clock(bool set_compilation_date=false);
 		bool begin_internal_temperature_sensor();
 		bool begin_external_temperature_sensor();
-		bool begin_wind_sensor();
-		bool begin_rain_sensor();
+		bool begin_windrain_sensor();
 		bool begin_snow_distance_sensor();
 
 		bool begin_ledpins();
@@ -105,8 +106,7 @@ class SnowStation{
 		DateInfo get_date_data();
 		TempInfo get_internal_temperature_data();
 		TempInfo get_external_temperature_data();
-		WindInfo get_wind_data();
-		RainInfo get_rain_data();
+		WindrainInfo get_windrain_data();
 		SnowInfo get_snow_data();
 		void update_all_sensor_data();
 		
@@ -156,8 +156,7 @@ class SnowStation{
 		DateInfo date_info;
 		TempInfo internal_temp_info;
 		TempInfo external_temp_info;
-		WindInfo wind_info;
-		RainInfo rain_info;
+		WindrainInfo windrain_info;
 		SnowInfo snow_info;
 };
 
