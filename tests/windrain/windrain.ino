@@ -1,5 +1,8 @@
 #include <float.h>
 #include <Wire.h>
+#include <EEPROM.h>
+#include <Ledpin.h>
+#include <Buttonpin.h>
 
 #define __DEBUG__
 #ifdef __DEBUG__
@@ -14,6 +17,9 @@
 #define ANEMOMETER_PIN 2
 #define WIND_VANE_PIN A3
 #define RAIN_GAUGE_PIN 3
+#define RESET_BUTTON_PIN 12
+#define RESET_LED_PIN 11
+
 #define INTERRUPT_DELAY_SECS 3.0
 #define ANEMOMETER_VOLTAGE 5.0
 
@@ -23,7 +29,8 @@ const float v_array[] = {3.84, 1.98, 2.25, 0.41, 0.45, 0.32, 0.9, 0.62, 1.4, 1.1
 const float dir_array[] = {0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5};
 float wind_speed = NAN;
 float wind_dir = NAN;
-float rain_freq = NAN;
+float rain_cumulated = NAN;
+int eeAddress = 0;
 
 float get_distance(float v1, float v2){
 	float d = abs(v1-v2);
@@ -51,6 +58,7 @@ float get_wind_direction(unsigned int analog_readed){
 
 void countup0(){
   interrupt_counter0 += 1;
+  EEPROM.put(eeAddress, interrupt_counter0);
 }
 
 void countup1(){
@@ -73,13 +81,21 @@ void requestEvent() {
       ((uint8_t*)&wind_dir)[1],
       ((uint8_t*)&wind_dir)[2],
       ((uint8_t*)&wind_dir)[3],
-      ((uint8_t*)&rain_freq)[0],
-      ((uint8_t*)&rain_freq)[1],
-      ((uint8_t*)&rain_freq)[2],
-      ((uint8_t*)&rain_freq)[3],
+      ((uint8_t*)&rain_cumulated)[0],
+      ((uint8_t*)&rain_cumulated)[1],
+      ((uint8_t*)&rain_cumulated)[2],
+      ((uint8_t*)&rain_cumulated)[3],
    };
   Wire.write(response, sizeof(response));
 }
+
+void reset_interrupt_counter0(){
+	interrupt_counter0 = 0;
+	EEPROM.put(eeAddress, interrupt_counter0);
+}
+
+Ledpin reset_ledpin = Ledpin(RESET_LED_PIN);
+Buttonpin reset_buttonpin = Buttonpin(RESET_BUTTON_PIN);
 
 void setup(){
 	Wire.begin(8); // join i2c bus with address #8
@@ -89,25 +105,35 @@ void setup(){
 	pinMode(ANEMOMETER_PIN, INPUT);
 	pinMode(WIND_VANE_PIN, INPUT);
 	pinMode(RAIN_GAUGE_PIN, INPUT);
+  interrupt_counter0 = EEPROM.read(eeAddress);
+  interrupt_counter1 = 0;
+  attachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN), countup0, RISING);
+  reset_ledpin.begin();
+  reset_buttonpin.begin();
 }
 
 void loop(){
+	if (reset_buttonpin.is_on()){
+		while(reset_buttonpin.is_on()){
+			;
+		}
+		reset_interrupt_counter0();
+		DEBUGLN("EEPROM reset");
+		reset_ledpin.pulse(2);
+	}
 	// rain level and wind speed
-  interrupt_counter0 = 0;
   interrupt_counter1 = 0;
-  attachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN), countup0, RISING);
   attachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN), countup1, RISING);
   delay(1000*INTERRUPT_DELAY_SECS);
-  detachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN));
   detachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN));
-  rain_freq = (float)interrupt_counter0/((float)INTERRUPT_DELAY_SECS);
+  rain_cumulated = (float)interrupt_counter0*0.2794;
   wind_speed = (float)interrupt_counter1/((float)INTERRUPT_DELAY_SECS*2.4);
 	wind_dir = get_wind_direction(analogRead(WIND_VANE_PIN));
 	DEBUG("wind_speed=");
 	DEBUG(wind_speed);
 	DEBUG(" wind_dir=");
 	DEBUG(wind_dir);
-	DEBUG(" rain_freq=");
-	DEBUG(rain_freq);
+	DEBUG(" rain_cumulated=");
+	DEBUG(rain_cumulated);
 	DEBUGLN();
 }
