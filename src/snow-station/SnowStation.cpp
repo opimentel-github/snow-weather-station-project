@@ -142,7 +142,7 @@ bool SnowStation::begin_sd(){
 			"EH",\
 			"WS",\
 			"WD",\
-			"RL",\
+			"RC",\
 			"SD"\
 			);
 		file.println(sd_buffer_text); // write buffer
@@ -237,7 +237,7 @@ WindrainInfo SnowStation::get_windrain_data(){
 	Wire.requestFrom(8, 12);
 	float speed;
 	float direction;
-	float rain_freq;
+	float rain_cumulated;
     ((uint8_t*)&speed)[0] = Wire.read();
     ((uint8_t*)&speed)[1] = Wire.read();
     ((uint8_t*)&speed)[2] = Wire.read();
@@ -246,14 +246,14 @@ WindrainInfo SnowStation::get_windrain_data(){
     ((uint8_t*)&direction)[1] = Wire.read();
     ((uint8_t*)&direction)[2] = Wire.read();
     ((uint8_t*)&direction)[3] = Wire.read();
-    ((uint8_t*)&rain_freq)[0] = Wire.read();
-    ((uint8_t*)&rain_freq)[1] = Wire.read();
-    ((uint8_t*)&rain_freq)[2] = Wire.read();
-    ((uint8_t*)&rain_freq)[3] = Wire.read();
+    ((uint8_t*)&rain_cumulated)[0] = Wire.read();
+    ((uint8_t*)&rain_cumulated)[1] = Wire.read();
+    ((uint8_t*)&rain_cumulated)[2] = Wire.read();
+    ((uint8_t*)&rain_cumulated)[3] = Wire.read();
 
 	windrain_info.wind_speed = speed;
 	windrain_info.wind_direction = direction;
-	windrain_info.rain_freq = rain_freq;
+	windrain_info.rain_cumulated = rain_cumulated;
 	return windrain_info;
 }
 
@@ -321,23 +321,31 @@ void SnowStation::update_screen(){
 
 	sprintf(screen_buffer_text,
 		"IT=%s; ET=%s",
-		String(internal_temp_info.temperature).c_str(),
-		String(external_temp_info.temperature).c_str()
+		String(internal_temp_info.temperature, NOF_DECIMALS).c_str(),
+		String(external_temp_info.temperature, NOF_DECIMALS).c_str()
 		);
 	screen->print(screen_buffer_text, 0, SCREEN_DY*1);
 
 	sprintf(screen_buffer_text,
 		"IH=%s; EH=%s",
-		String(internal_temp_info.humidity).c_str(),
-		String(external_temp_info.humidity).c_str()
+		String(internal_temp_info.humidity, NOF_DECIMALS).c_str(),
+		String(external_temp_info.humidity, NOF_DECIMALS).c_str()
 		);
 	screen->print(screen_buffer_text, 0, SCREEN_DY*2);
 
 	sprintf(screen_buffer_text,
-		"SD=%s",
-		String(snow_info.distance).c_str()
+		"WS=%s; WD=%s",
+		String(windrain_info.wind_speed, NOF_DECIMALS).c_str(),
+		String(windrain_info.wind_direction, NOF_DECIMALS).c_str()
 		);
 	screen->print(screen_buffer_text, 0, SCREEN_DY*3);
+
+	sprintf(screen_buffer_text,
+		"RC=%s; SD=%s",
+		String(windrain_info.rain_cumulated, NOF_DECIMALS).c_str(),
+		String(snow_info.distance, NOF_DECIMALS).c_str()
+		);
+	screen->print(screen_buffer_text, 0, SCREEN_DY*4);
 
 	screen->update();
 }
@@ -349,15 +357,15 @@ void SnowStation::update_buffer(){
 		String(copied_sds_counter).c_str(),\
 		String(state).c_str(),\
 		String(date_info.julian_date).c_str(),\
-		String(date_info.julian_day, NOF_DECIMALS).c_str(),\
-		String(internal_temp_info.temperature).c_str(),\
-		String(internal_temp_info.humidity).c_str(),\
-		String(external_temp_info.temperature).c_str(),\
-		String(external_temp_info.humidity).c_str(),\
-		String(windrain_info.wind_speed).c_str(),\
-		String(windrain_info.wind_direction).c_str(),\
-		String(windrain_info.rain_freq).c_str(),\
-		String(snow_info.distance).c_str()\
+		String(date_info.julian_day, 10).c_str(),\
+		String(internal_temp_info.temperature, NOF_DECIMALS).c_str(),\
+		String(internal_temp_info.humidity, NOF_DECIMALS).c_str(),\
+		String(external_temp_info.temperature, NOF_DECIMALS).c_str(),\
+		String(external_temp_info.humidity, NOF_DECIMALS).c_str(),\
+		String(windrain_info.wind_speed, NOF_DECIMALS).c_str(),\
+		String(windrain_info.wind_direction, NOF_DECIMALS).c_str(),\
+		String(windrain_info.rain_cumulated, NOF_DECIMALS).c_str(),\
+		String(snow_info.distance, NOF_DECIMALS).c_str()\
 		);
 	DEBUG("sd_buffer_text="); DEBUGLN(sd_buffer_text);
 	update_screen();

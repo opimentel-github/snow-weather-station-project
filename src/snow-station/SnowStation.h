@@ -25,14 +25,14 @@
 #define DELIMITER ':'
 #define USES_FIXED_C 1
 #define CONTRAST 70
-#define SCREEN_DY 9
+#define SCREEN_DY 8
 #define SHORT_DELAY 10
 #define LONG_DELAY 500
 #define USES_COMPILATION_DATE false
 
 #define MAX_UNSIGNED_LONG 4294967295
 
-#define NOF_DECIMALS 10
+#define NOF_DECIMALS 3
 #define HC_AVG 5
 #define SD_ROOTDIR "r"
 #define LOOP_DELAY 1000
@@ -76,7 +76,7 @@ struct TempInfo{
 struct WindrainInfo{
 	float wind_speed = NAN;
 	float wind_direction = NAN;
-	float rain_freq = NAN;
+	float rain_cumulated = NAN;
 };
 
 struct SnowInfo{

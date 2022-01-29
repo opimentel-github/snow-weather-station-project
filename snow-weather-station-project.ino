@@ -22,17 +22,17 @@ DFRobot_SHT20 sht_sensor;
 RTC_DS1307 rtc_clock;
 LCD5110 screen(8, 9, 10, 12, 11); // 84x48 pixels
 
-SnowStation snow_station(\
-	SD_PIN,\
-	SD_TRANSFER_DATA_LEDPIN,\
-	SD_WRITE_LEDPIN,\
-	SD_TRANSFER_DATA_BUTTONPIN,\
-	&dht_sensor,\
-	&sht_sensor,\
-	&rtc_clock,\
-	HC_TRIGGER_PIN,\
-	HC_ECHO_PIN,\
-	&screen\
+SnowStation snow_station(
+	SD_PIN,
+	SD_TRANSFER_DATA_LEDPIN,
+	SD_WRITE_LEDPIN,
+	SD_TRANSFER_DATA_BUTTONPIN,
+	&dht_sensor,
+	&sht_sensor,
+	&rtc_clock,
+	HC_TRIGGER_PIN,
+	HC_ECHO_PIN,
+	&screen
 	);
 
 //############################################################
