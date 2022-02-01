@@ -56,6 +56,22 @@ float get_wind_direction(unsigned int analog_readed){
 	return selected_dir;
 }
 
+float get_wind_speed(bool apply_delay=true){
+  interrupt_counter1 = 0;
+  attachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN), countup1, RISING);
+  if (apply_delay){
+  	delay(1000*INTERRUPT_DELAY_SECS);
+	}
+  detachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN));
+	float wind_speed = (float)interrupt_counter1/((float)INTERRUPT_DELAY_SECS*2.4); // in km/h
+	return wind_speed;
+}
+
+float get_rain_cumulated(){
+	float rain_cumulated = (float)interrupt_counter0*0.2794; // in mm
+	return rain_cumulated;
+}
+
 void countup0(){
   interrupt_counter0 += 1;
   EEPROM.put(eeAddress, interrupt_counter0);
@@ -110,6 +126,10 @@ void setup(){
   attachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN), countup0, RISING);
   reset_ledpin.begin();
   reset_buttonpin.begin();
+  
+  wind_speed = get_wind_speed(false);
+	wind_dir = get_wind_direction(analogRead(WIND_VANE_PIN));
+  rain_cumulated = get_rain_cumulated();
 }
 
 void loop(){
@@ -121,14 +141,10 @@ void loop(){
 		DEBUGLN("EEPROM reset");
 		reset_ledpin.pulse(2);
 	}
-	// rain level and wind speed
-  interrupt_counter1 = 0;
-  attachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN), countup1, RISING);
-  delay(1000*INTERRUPT_DELAY_SECS);
-  detachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN));
-  rain_cumulated = (float)interrupt_counter0*0.2794;
-  wind_speed = (float)interrupt_counter1/((float)INTERRUPT_DELAY_SECS*2.4);
+	// get measurements
+  wind_speed = get_wind_speed(); // long delay
 	wind_dir = get_wind_direction(analogRead(WIND_VANE_PIN));
+  rain_cumulated = get_rain_cumulated();
 	DEBUG("wind_speed=");
 	DEBUG(wind_speed);
 	DEBUG(" wind_dir=");
