@@ -19,13 +19,13 @@
 #include <DHT.h>
 #include <DFRobot_SHT20.h>
 #include <RTClib.h>
-#include <LCD5110_Graph.h>
 #include <float.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 #define DELIMITER ':'
 #define USES_FIXED_C 1
-#define CONTRAST 70
-#define SCREEN_DY 8
+#define DISPLAY_DY 10
 #define SHORT_DELAY 10
 #define LONG_DELAY 500
 #define USES_COMPILATION_DATE false
@@ -35,8 +35,8 @@
 #define NOF_DECIMALS 3
 #define HC_AVG 5
 #define SD_ROOTDIR "r"
-#define LOOP_DELAY 1000
-#define MAX_LOOP_COUNTER 10 // 10 10000
+#define MAX_LOOP_COUNTER 100000 // 10
+#define LOOP_DELAY 10 // 10 usecs
 
 #define ANEMOMETER_VOLTAGE 5.0
 
@@ -46,6 +46,7 @@
 #define STATE_SD_ERROR 2
 #define STATE_COPYING_OK 3
 #define STATE_COPYING_FINISH 4
+#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 
 extern unsigned char MediumNumbers[];
 extern unsigned char BigNumbers[];
@@ -87,7 +88,7 @@ struct SnowInfo{
 
 class SnowStation{
 	public:
-		SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, DFRobot_SHT20* _sht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, LCD5110* _screen);
+		SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, DFRobot_SHT20* _sht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, Adafruit_SSD1306* _display);
 		SnowStation(void); // empty constructor
 		void begin();
 
@@ -100,7 +101,7 @@ class SnowStation{
 
 		bool begin_ledpins();
 		bool begin_buttonpins();
-		bool begin_screen();
+		bool begin_display();
 		bool begin_sd();
 
 		DateInfo get_date_data();
@@ -111,7 +112,7 @@ class SnowStation{
 		void update_all_sensor_data();
 		
 		// updates
-		void update_screen();
+		void update_display();
 		void update_buffer();
 
 		// internal sd
@@ -141,7 +142,7 @@ class SnowStation{
 		RTC_DS1307* rtc_clock;
 		int hc_trigger_pin;
 		int hc_echo_pin;
-		LCD5110* screen;
+		Adafruit_SSD1306* display;
 
 		int state;
 		unsigned long loop_counter;
@@ -150,7 +151,7 @@ class SnowStation{
 		char record_filedir[20];
 		char sd_buffer_text[300];
 		char sd_copy_buffer_text[300];
-		char screen_buffer_text[100];
+		char display_buffer_text[100];
 		String serial_str;
 
 		DateInfo date_info;

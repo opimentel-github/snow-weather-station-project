@@ -20,7 +20,7 @@ float get_distance(float v1, float v2){
 
 //############################################################
 
-SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, DFRobot_SHT20* _sht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, LCD5110* _screen){
+SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_write_ledpin, int _sd_transfer_data_buttonpin, DHT* _dht_sensor, DFRobot_SHT20* _sht_sensor, RTC_DS1307* _rtc_clock, int _hc_trigger_pin, int _hc_echo_pin, Adafruit_SSD1306* _display){
 	sd_pin = _sd_pin;
 	sd_transfer_data_ledpin = Ledpin(_sd_transfer_data_ledpin);
 	sd_write_ledpin = Ledpin(_sd_write_ledpin);
@@ -30,7 +30,7 @@ SnowStation::SnowStation(int _sd_pin, int _sd_transfer_data_ledpin, int _sd_writ
 	rtc_clock = _rtc_clock;
 	hc_trigger_pin = _hc_trigger_pin;
 	hc_echo_pin = _hc_echo_pin;
-	screen = _screen;
+	display = _display;
 }
 
 SnowStation::SnowStation(void){
@@ -45,7 +45,7 @@ void SnowStation::begin(){
 
 	begin_ledpins();
 	begin_buttonpins();
-	begin_screen();
+	begin_display();
 	begin_sd();
 	change_state(STATE_SENSING_OK);
 }
@@ -152,10 +152,15 @@ bool SnowStation::begin_sd(){
 	return true;
 }
 
-bool SnowStation::begin_screen(){
+bool SnowStation::begin_display(){
+	bool success;
 	delay(SHORT_DELAY);
-	screen->InitLCD(CONTRAST);
-	return true;
+	success = display->begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+	if (success){
+		display->clearDisplay();
+		display->setRotation(2);
+	}
+	return success;
 }
 
 //############################################################
@@ -308,46 +313,52 @@ void SnowStation::update_all_sensor_data(){
 
 //############################################################
 
-void SnowStation::update_screen(){
-	screen->clrScr();
-	screen->setFont(TinyFont);
+void SnowStation::update_display(){
+	display->clearDisplay();
+  	display->setTextSize(1);             // Normal 1:1 pixel scale
+  	display->setTextColor(SSD1306_WHITE);        // Draw white text
 
-	sprintf(screen_buffer_text,
+	sprintf(display_buffer_text,
 		"%04d/%02d/%02d %02d:%02d:%02d",
 		date_info.year, date_info.month, date_info.day, date_info.hour, date_info.minute, date_info.second
 		);
-	screen->print(screen_buffer_text, 0, SCREEN_DY*0);
-	screen->drawLine(0, 6, 84, 6);
+	display->setCursor(0, DISPLAY_DY*0);
+	display->print(display_buffer_text);
+	display->drawLine(0, DISPLAY_DY-2, display->width()-1, DISPLAY_DY-2, SSD1306_WHITE);
 
-	sprintf(screen_buffer_text,
+	sprintf(display_buffer_text,
 		"IT=%s; ET=%s",
 		String(internal_temp_info.temperature, NOF_DECIMALS).c_str(),
 		String(external_temp_info.temperature, NOF_DECIMALS).c_str()
 		);
-	screen->print(screen_buffer_text, 0, SCREEN_DY*1);
+	display->setCursor(0, DISPLAY_DY*1);
+	display->print(display_buffer_text);
 
-	sprintf(screen_buffer_text,
+	sprintf(display_buffer_text,
 		"IH=%s; EH=%s",
 		String(internal_temp_info.humidity, NOF_DECIMALS).c_str(),
 		String(external_temp_info.humidity, NOF_DECIMALS).c_str()
 		);
-	screen->print(screen_buffer_text, 0, SCREEN_DY*2);
+	display->setCursor(0, DISPLAY_DY*2);
+	display->print(display_buffer_text);
 
-	sprintf(screen_buffer_text,
+	sprintf(display_buffer_text,
 		"WS=%s; WD=%s",
 		String(windrain_info.wind_speed, NOF_DECIMALS).c_str(),
 		String(windrain_info.wind_direction, NOF_DECIMALS).c_str()
 		);
-	screen->print(screen_buffer_text, 0, SCREEN_DY*3);
+	display->setCursor(0, DISPLAY_DY*3);
+	display->print(display_buffer_text);
 
-	sprintf(screen_buffer_text,
+	sprintf(display_buffer_text,
 		"RC=%s; SD=%s",
 		String(windrain_info.rain_cumulated, NOF_DECIMALS).c_str(),
 		String(snow_info.distance, NOF_DECIMALS).c_str()
 		);
-	screen->print(screen_buffer_text, 0, SCREEN_DY*4);
+	display->setCursor(0, DISPLAY_DY*4);
+	display->print(display_buffer_text);
 
-	screen->update();
+	display->display();
 }
 
 void SnowStation::update_buffer(){
@@ -368,7 +379,7 @@ void SnowStation::update_buffer(){
 		String(snow_info.distance, NOF_DECIMALS).c_str()\
 		);
 	DEBUG("sd_buffer_text="); DEBUGLN(sd_buffer_text);
-	update_screen();
+	update_display();
 }
 
 //############################################################
@@ -381,7 +392,7 @@ bool SnowStation::save_record(){
 	if (file){
 		file.println(sd_buffer_text); // write buffer
 		file.close(); // close the file
-		sd_write_ledpin.pulse(2);
+		// sd_write_ledpin.pulse(3);
 	}else{
 		change_state(STATE_SD_ERROR);
 		return false;
@@ -479,6 +490,9 @@ void SnowStation::loop(){
 			change_state(STATE_COPYING_OK);
 		}else{
 			delay(LOOP_DELAY);
+			if (loop_counter%500==0){
+				sd_write_ledpin.pulse(2);
+			}
 			if(loop_counter>MAX_LOOP_COUNTER){
 				bool record_saved = save_record();
 				if(record_saved){

@@ -8,10 +8,12 @@ char nombreMes[12][12]= {"Enero", "Febrero", "Marzo", "Abril", "Mayo",  "Junio",
 int segundo, minuto, hora, dia, mes, diaDeLaSemana;
 long anio; //variable año
 
+#define BAUD_RATE 500000
+
 DateTime HoraFecha;
 
 void setup () {
-  Serial.begin(9600);
+  Serial.begin(BAUD_RATE);
   rtc.begin(); //Inicializamos el RTC
   Serial.println("Estableciendo Hora y fecha...");
   bool update = 1;

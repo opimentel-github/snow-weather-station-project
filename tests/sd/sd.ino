@@ -3,7 +3,7 @@
 File myFile;
 
 #define BAUD_RATE 500000
-#define SD_PIN 10
+#define SD_PIN 10 // 10 53
 
 void setup() {
 // Open serial communications and wait for port to open:
