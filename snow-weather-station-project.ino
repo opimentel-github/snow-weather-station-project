@@ -43,6 +43,8 @@ SnowStation snow_station(
 //############################################################
 
 void setup(){
+	digitalWrite(SDA, LOW); // disables internal pull-ups
+	digitalWrite(SCL, LOW); // disables internal pull-ups
 	Serial.begin(BAUD_RATE);
 	Serial3.begin(BAUD_RATE);
 	snow_station.begin();
